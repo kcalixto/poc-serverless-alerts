@@ -1,0 +1,82 @@
+dev:
+  api:
+    Resources:
+  jobs:
+    Resources:
+
+prd:
+  api:
+    Resources:
+      AppsflyerQueueAlarm:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+          AlarmName: AppsflyerQueueAlarm
+          ComparisonOperator: GreaterThanThreshold
+          EvaluationPeriods: 1
+          MetricName: ApproximateNumberOfMessagesVisible
+          Namespace: AWS/SQS
+          Period: 60
+          Statistic: Sum
+          Threshold: 1
+          Dimensions:
+            - Name: QueueName
+              Value: ${self:custom.resources.appsflyer-queue-name}
+
+      AppsflyerQueueAlarmAgeOfOldestMessage:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+          AlarmName: AppsflyerQueueAlarm-OldestMessage
+          ComparisonOperator: GreaterThanThreshold
+          EvaluationPeriods: 1
+          MetricName: ApproximateAgeOfOldestMessage
+          Namespace: AWS/SQS
+          Period: 60
+          Statistic: Maximum
+          Threshold: 86400 # 24h
+          Dimensions:
+            - Name: QueueName
+              Value: ${self:custom.resources.appsflyer-queue-name}
+
+      ProducerTooManyErrors:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+          AlarmName: "Producer - Too Many Errors"
+          ComparisonOperator: GreaterThanThreshold
+          Namespace: AWS/Lambda
+          MetricName: Errors
+          Period: 300 # 5 min
+          Threshold: 5
+          EvaluationPeriods: 1
+          Statistic: Sum
+          Dimensions:
+            - Name: FunctionName
+              Value: aws-node-sqs-worker-project-${self:provider.stage}-producer
+            - Name: Aloha
+              Value: aws-node-sqs-worker-project-${self:provider.stage}-producer-v2
+
+      ProducerTooManyErrorLogsMetric:
+        Type: AWS::Logs::MetricFilter
+        Properties:
+          FilterPattern: "error"
+          LogGroupName: /aws/lambda/${self:service}-${self:provider.stage}-producer
+          MetricTransformations:
+            - MetricName: "[Producer] Too many errors test"
+              MetricValue: 1
+              MetricNamespace: iq-horcrux/Lambda
+
+      ProducerTooManyErrorLogs:
+        Type: AWS::CloudWatch::Alarm
+        Properties:
+          AlarmName: "[Testes] ${self:service}-${self:provider.stage}-producer - Too Many Error Logs"
+          ComparisonOperator: GreaterThanThreshold
+          Namespace: iq-horcrux/Lambda
+          MetricName: "[Producer] Too many errors test"
+          Period: 300 # 5 min
+          Threshold: 5
+          EvaluationPeriods: 1
+          Statistic: Sum
+
+
+  
+  jobs:
+    Resources:
