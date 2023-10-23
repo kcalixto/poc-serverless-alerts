@@ -1,45 +1,19 @@
-service: aws-node-sqs-worker-project
-frameworkVersion: '3'
-
-custom:
-  resources:
-    appsflyer-queue-name: testing-queue-aloha-${self:provider.stage}
+service: aws-test
+frameworkVersion: "3"
 
 provider:
   name: aws
   runtime: nodejs18.x
   region: sa-east-1
   stage: ${opt:stage, 'prd'}
-  iam:
-    role:
-      statements:
-        - Effect: Allow
-          Action:
-            - sqs:SendMessage
-          Resource: "*"
 
 functions:
-  producer:
-    handler: index.producer
+  handler:
+    handler: index.handler
     events:
       - httpApi:
           method: post
-          path: /produce
-  producer-v2:
-    handler: index.producer
-    events:
-      - httpApi:
-          method: post
-          path: /produce-v2
+          path: /
 
 resources:
   - ${file(alerts.yml):${self:provider.stage}.api}
-
-  - Resources:
-      AppsflyerQueueFIFO:
-        Type: "AWS::SQS::Queue"
-        Properties:
-          QueueName: ${self:custom.resources.appsflyer-queue-name}
-
-plugins:
-  - serverless-lift
